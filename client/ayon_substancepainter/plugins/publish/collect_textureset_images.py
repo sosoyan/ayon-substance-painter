@@ -53,6 +53,10 @@ class CollectTextureSet(pyblish.api.InstancePlugin):
                 self.log.info(
                     f"Processing {template} with tile name {tilename}"
                 )
+
+                if len(outputs) > 1:
+                    outputs = sorted(outputs, key=lambda x: x["udim"])
+
                 self.create_image_instance(
                     instance,
                     template,
@@ -109,7 +113,7 @@ class CollectTextureSet(pyblish.api.InstancePlugin):
 
         # Always include the map identifier
         map_identifier = strip_template(template)
-        suffix += f".{map_identifier}"
+        suffix += f"_{map_identifier}"
 
         task_name = task_type = None
         if task_entity:
@@ -119,7 +123,7 @@ class CollectTextureSet(pyblish.api.InstancePlugin):
         # TODO: The product type actually isn't 'texture' currently but
         #   for now this is only done so the product name starts with
         #   'texture'
-        product_base_type = "texture"
+        product_base_type = "textureSet"
         if getattr(get_product_name, "use_entities", False):
             get_product_name_kwargs = {
                 "task_name": task_name,
@@ -326,34 +330,3 @@ class CollectTextureSetStagingDir(pyblish.api.InstancePlugin):
             # Update representation staging dir.
             for repre in image_instance.data["representations"]:
                 repre["stagingDir"] = staging_dir
-
-
-class CollectCustomExportPresetUrl(pyblish.api.InstancePlugin):
-    """Collect Export Preset Url when single texture output enabled."""
-
-    label = "Collect Export Preset for Single Texture Output"
-    hosts = ["substancepainter"]
-    families = ["textureSet"]
-
-    # Run after CollectManagedStagingDir
-    order = pyblish.api.CollectorOrder + 0.4992
-
-    def process(self, instance):
-        # Update export config
-        if not instance.data["creator_attributes"].get(
-            "flattenTextureSets", False):
-            return
-
-        config = instance.data["exportConfig"]
-        export_config = copy.deepcopy(config)
-        custom_export_preset = "Ayon_Custom_Preset"
-        for export_preset in export_config["exportPresets"]:
-            export_preset["name"] = custom_export_preset
-
-        export_config["defaultExportPreset"] = custom_export_preset
-        instance.data["exportConfig"] = export_config
-        # Update image instances and their representations
-        for image_instance in instance:
-
-            # Include the updated config
-            image_instance.data["exportConfig"] = export_config

@@ -546,33 +546,6 @@ def get_parsed_output_maps_as_single_output(result):
     return result_with_single_output
 
 
-def map_includes_channel(map: dict, channel_name: str) -> bool:
-    """Check if given channel is included in the output map.
-
-    Args:
-        map (dict): output map
-        channel_name (str): channel name to check for
-
-    Returns:
-        bool: True if the map includes the channel name, False otherwise
-
-    """
-    # original behavior: check if the channel name is in the file name
-    file_name = map.get("fileName") or ""
-    if channel_name in file_name:
-        return True
-
-    # Substance stores the channel names in lowercase
-    channel_name = channel_name.lower()
-
-    for channel in map.get("channels", []):
-        source_map_name = channel.get("srcMapName", "").lower()
-        if source_map_name == channel_name:
-            return True
-
-    return False
-
-
 def load_shelf(path, name=None):
     """Add shelf to substance painter (for current application session)
 
@@ -758,6 +731,10 @@ def get_filtered_export_preset(export_preset_name, channel_type_names,
     Returns:
         dict: export preset data
     """
+
+    all_output_maps = []
+    target_maps = []
+
     export_presets = get_export_presets()
     export_preset_nice_name = export_presets[export_preset_name]
     resource_presets = substance_painter.export.list_resource_export_presets()
@@ -771,31 +748,25 @@ def get_filtered_export_preset(export_preset_name, channel_type_names,
         return {}
 
     maps = preset.list_output_maps()
-
-    if strip_texture_set:
-        all_output_maps = []
-        for channel_map in maps:
+    for channel_map in maps:
+        if strip_texture_set:
             old_channel_map = channel_map["fileName"]
             channel_map["fileName"] = re.sub(
-                r"[_.-]?\$textureSet[_.-]?", "",
+                r"[_.-]*\$textureSet[_.-]*", "",
                 old_channel_map
             )
             # export_preset_name = custom_export_preset
             all_output_maps.append(channel_map)
-    else:
-        all_output_maps = maps
+        else:
+            all_output_maps = maps
 
-    # Filter based on selected output channels
     if channel_type_names:
-        target_maps = []
         for channel_map in all_output_maps:
-
-            include = any(map_includes_channel(
-                channel_map, channel_name) for channel_name in
-                channel_type_names
-            )
-            if include:
-                target_maps.append(channel_map)
+            for channel in channel_map.get('channels', []):
+                src_map_name = channel.get('srcMapName', '')
+                if any(name in src_map_name for name in channel_type_names):
+                    target_maps.append(channel_map)
+                    break
     else:
         target_maps = all_output_maps
 
