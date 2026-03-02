@@ -8,7 +8,7 @@ from ayon_core.pipeline import (
 
 class SaveCurrentWorkfile(pyblish.api.ContextPlugin):
     """Save current workfile"""
-
+    enabled = False
     label = "Save current workfile"
     order = pyblish.api.ExtractorOrder - 0.49
     hosts = ["substancepainter"]

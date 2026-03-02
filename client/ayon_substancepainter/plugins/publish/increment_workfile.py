@@ -15,6 +15,7 @@ class IncrementWorkfileVersion(pyblish.api.ContextPlugin):
     order = pyblish.api.IntegratorOrder + 1
     label = "Increment Workfile Version"
     optional = True
+    enabled = False
     hosts = ["substancepainter"]
 
     def process(self, context):
