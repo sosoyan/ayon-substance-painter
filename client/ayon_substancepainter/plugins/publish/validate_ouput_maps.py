@@ -139,9 +139,10 @@ class ValidateOutputMaps(pyblish.api.InstancePlugin):
                         "No Texture Map Exported with texture set: {}.".format(
                             instance.name)
                     )
-            for item in export_preset["maps"]:
-                for channel in item.get('channels', []):
-                    if channel.get('srcMapName') not in export_channel:
-                        invalid_channels.append(item)
+
+                for item in export_preset["maps"]:
+                    for channel in item.get('channels', []):
+                        if channel.get('srcMapName') not in export_channel:
+                            invalid_channels.append(item)
 
         return invalid_channels
